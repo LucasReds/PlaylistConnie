@@ -94,6 +94,33 @@
     opacity: 0.6;
     font-size: 0.9rem;
   }
+
+  /* Final page: QR code + button linking to full playlist */
+  .qr-image {
+    width: 60vw;
+    max-width: 260px;
+    border-radius: 12px;
+    background: #fff; /* QR codes need light backing to stay scannable */
+    padding: 12px;
+  }
+ 
+  .qr-caption {
+    margin-top: 20px;
+    font-size: 0.95rem;
+    opacity: 0.85;
+  }
+ 
+  .spotify-button {
+    margin-top: 16px;
+    display: inline-block;
+    padding: 12px 24px;
+    background: #1DB954; /* Spotify green */
+    color: #000;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    border-radius: 999px;
+  }
 </style>
 </head>
 <body>
@@ -238,6 +265,17 @@ function renderPage(page, data, note) {
   idx.textContent = page.dataset.indexLabel;
   page.appendChild(idx);
 }
+function renderFinalPage(page) {
+  page.innerHTML = `
+    <div class="page" id="qr-page">
+      <img class="qr-image" src="media/spcode-3uTuSVooF7Lt0hhgdWijXW.jpeg" alt="QR code linking to the full Spotify playlist" />
+      <div class="qr-caption">Escanéalo con Spotify<br>o apreta el botón!</div>
+      <a class="spotify-button" href="https://open.spotify.com/playlist/3uTuSVooF7Lt0hhgdWijXW" target="_blank" rel="noopener">
+        Open in Spotify
+      </a>
+    </div>
+  `;
+}
 
 function renderError(page, indexLabel) {
   page.innerHTML = `
@@ -263,6 +301,11 @@ async function init() {
       renderError(page, `${i + 1} / ${SONGS.length}`);
     }
   });
+    // Add final page with QR code and playlist link
+    const finalPage = document.createElement("div");
+    finalPage.className = "page";
+    bookEl.appendChild(finalPage);
+    renderFinalPage(finalPage);
 }
 
 init();
