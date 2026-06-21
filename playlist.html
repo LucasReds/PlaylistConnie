@@ -309,6 +309,34 @@ async function init() {
 }
 
 init();
+const bgVideo = document.getElementById("background-video");
+function tryPlayVideo() {
+  if (bgVideo && bgVideo.paused) {
+    bgVideo.play().catch(() => {
+      // still blocked, will retry on next interaction
+    });
+  }
+}
+document.addEventListener("touchstart", tryPlayVideo, { once: true });
+document.addEventListener("click", tryPlayVideo, { once: true });
+let currentPageIndex = 0;
+ 
+function stopPlaybackOnPage(index) {
+  const page = document.getElementById(`page-${index}`);
+  if (!page) return;
+  const iframe = page.querySelector(".player-wrap iframe");
+  if (iframe) {
+    iframe.src = iframe.src; 
+  }
+}
+ 
+bookEl.addEventListener("scroll", () => {
+  const newIndex = Math.round(bookEl.scrollLeft / window.innerWidth);
+  if (newIndex !== currentPageIndex) {
+    stopPlaybackOnPage(currentPageIndex); // stop the page we're leaving
+    currentPageIndex = newIndex;
+  }
+});
 </script>
 
 </body>
