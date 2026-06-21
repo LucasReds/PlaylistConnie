@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>For my Girl</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, system-ui, -apple-system, sans-serif;
+  }
+
+  /* Horizontal swipe track. Each .page is one song, full viewport width. */
+  #book {
+    height: 100%;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #book::-webkit-scrollbar { display: none; }
+
+  .page {
+    flex: 0 0 100vw;
+    height: 100%;
+    scroll-snap-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    color: #fff;
+    text-align: center;
+    position: relative;
+  }
+
+  .art {
+    width: 60vw;
+    max-width: 280px;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 12px;
+    background: #333; /* shows while loading */
+  }
+
+  .track-title {
+    margin-top: 20px;
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+  .track-artist {
+    margin-top: 4px;
+    font-size: 1rem;
+    opacity: 0.7;
+  }
+
+  .note {
+    margin-top: 16px;
+    max-width: 320px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    opacity: 0.9;
+    border: #333 1px solid;
+    border-radius: 15px;
+    background-color: #333;
+    padding: 12px 16px;
+  }
+
+  .player-wrap {
+    margin-top: 20px;
+    width: 90vw;
+    max-width: 360px;
+  }
+  .player-wrap iframe {
+    width: 100%;
+    border-radius: 12px;
+  }
+
+  .page-index {
+    position: absolute;
+    bottom: 16px;
+    font-size: 0.75rem;
+    opacity: 0.5;
+    background-color: #333;
+    border-radius: 15px;
+    padding: 10px 14px;
+  }
+
+  .loading-text, .error-text {
+    opacity: 0.6;
+    font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+
+<video autoplay muted loop id="background-video" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      min-width: 100%;
+      min-height: 100%;
+      z-index: -1;
+      object-fit: cover;
+    ">
+      <source src="flowers.mp4" type="video/mp4">
+</video>
+
+<div id="book">
+  <!-- Pages are injected here by JS based on the SONGS array below -->
+</div>
+
+<script>
+const SONGS = [
+  { // Echoes - Pink Floyd
+    url: "https://open.spotify.com/track/7kriFJLY2KOhw5en9iI2jb",
+    note: "Echoes siempre me hace sentir como si estuviera flotando, y es de las canciones más largas que he escuchado. Ojalá que lo nuestro sea igual de lindo y duradero."
+  },
+  { // In My Life - The Beatles
+    url: "https://open.spotify.com/track/3KfbEIOC7YIv90FIfNSZpo",
+    note: "Esta canción me da mucha ternura, te hace reflejar en todo lo que uno vive, y así poder valorar lo que uno tiene ahora."
+  },
+  { // lovers' carvings - Bibio
+    url: "https://open.spotify.com/track/2cRYvcyWfz7jieYIBkI7JR",
+    note: "Una canción que da muchisima alegría, así suena estar caminando contigo por las calles de Santiago."
+  },
+  { // In the Still of the Night - The Five Satins
+    url: "https://open.spotify.com/track/3HiRsjdVw09ZX8dxxf9RPX",
+    note: "Esta la conocí por The Irishman, y siempre me sonó como una de esas canciones para bailar lento contigo, teniendote entre mis brazos."
+  },
+  { // Love at the Shore - The Pr Tv Orchestra
+    url: "https://open.spotify.com/track/7hd9zYmg79s09JD1fniSbW",
+    note: "Así suena las veces que te veo cuando nos juntamos. No necesita letra para ser hermosa, como tú."
+  },
+  { // Che Vuole Questa Musica Stasera - Armando Trovajoli
+    url: "https://open.spotify.com/track/6wrptu9SlLfq8bE6C86kEX",
+    note: "Uno no tiene que saber la letra para saber que esta canción está para cantarsela a mi querida. En todo caso, búscate la letra traducida. Es preciosa."
+  },
+  { // Digital Love - Daft Punk
+    url: "https://open.spotify.com/track/2VEZx7NWsZ1D0eJ4uv5Fym",
+    note: "Se trata de sueños de amor, y lo llevo escuchando tanto tiempo que no esperaba que se cumplieran."
+  },
+  { // You & Me (Flume Remix) - Disclosure, Eliza Doolittle, Flume
+    url: "https://open.spotify.com/track/3W2ZcrRsInZbjWylOi6KhZ",
+    note: "You and me, it'll be everything you ever dreamed. Lo escuché en vivo el 2016 y en ese momento, entre las masas de personas, supe que quería tener algo así algún día."
+  },
+  { // Baby Be Mine - Michael Jackson
+    url: "https://open.spotify.com/track/6XYbMGvtl6tlPoGWaiH7EY",
+    note: "It's MJ, 'nuff said."
+  },
+  { // Levels (Radio Edit) - Avicii
+    url: "https://open.spotify.com/track/5UqCQaDshqbIk3pkhy4Pjg",
+    note: "Los momentos más energéticos y vivos contigo suenan así."
+  },
+  { // Flowers Of Ink Suite - NiGRUVES & FiM
+    url: "https://open.spotify.com/track/4rz1941rn27m60XbJ54664",
+    note: "Esto lo escuché en la exposición de Monét que se hizo hace algunos años. Quedé fascinado con la exposición, con la mezcla de música y visuales que evocaban sus obras maestras. Estar contigo es aun más precioso que eso."
+  },
+  { // Apocalypse Dreams - Tame Impala
+    url: "https://open.spotify.com/track/7qU7vhCPKhkDiJYGoboISc",
+    note: "He soñado de manera tán lúcida con esta canción, y aun así no compara contigo. Solo escúchalo y dejate llevar por la corriente."
+  },
+  { // …con lentitud poderosa - Chris Christodoulou
+    url: "https://open.spotify.com/track/7G349JbUH3PRdj5e7780Iz",
+    note: "Uff, just listen to it."
+  },
+  { // The Lamp Is Low - Laurindo Almeida
+    url: "https://open.spotify.com/track/4QzZVJc6qPTtTkPem7qZRo",
+    note: "De más que lo has escuchado antes, pero es demasiado tierna esta canción para no ponerla en esta playlist."
+  },
+  { // It's Been a Long, Long Time - Harry James
+    url: "https://open.spotify.com/track/4rfh0qEv1HdKRXWiRXfzWF",
+    note: "Es un oldie, pero es perfecta para describirte. Creo que el tiempo que se describe en esta canción es cuanto hemos esperado los dos para tener a alguien con quién amar bonito. ¿Qué piensas tu?"
+  },
+  { // More Than A Woman - Bee Gees
+    url: "https://open.spotify.com/track/49OMJ1prsRA7ZYgrAjz70c",
+    note: "You're more than a woman to me, my girl."
+  },
+  { // Silk - Wolf Alice
+    url: "https://open.spotify.com/track/5VWtavZNYlK6m6MQY6YRg1",
+    note: "Espérate la última parte, it's worth the wait."
+  },
+];
+
+/* 
+   2. FETCH TRACK DATA VIA SPOTIFY OEMBED (no API key needed)
+   Returns: { title, thumbnail_url, html (embed iframe), ... }
+   Note: oEmbed's "title" field is formatted "Song · Artist"
+    */
+async function fetchTrackData(trackUrl) {
+  const endpoint = `https://open.spotify.com/oembed?url=${encodeURIComponent(trackUrl)}`;
+  const res = await fetch(endpoint);
+  if (!res.ok) throw new Error(`oEmbed failed: ${res.status}`);
+  return res.json();
+}
+
+// Splits oEmbed's "Song · Artist" title into parts. Falls back if the separator isn't present.
+function splitTitle(rawTitle) {
+  const parts = rawTitle.split(" · ");
+  if (parts.length >= 2) {
+    return { song: parts[0], artist: parts.slice(1).join(" · ") };
+  }
+  return { song: rawTitle, artist: "" };
+}
+
+/* 
+    3. BUILD PAGES
+    */
+const bookEl = document.getElementById("book");
+
+function createPageSkeleton(index) {
+  const page = document.createElement("div");
+  page.className = "page";
+  page.id = `page-${index}`;
+  page.innerHTML = `
+    <div class="loading-text">loading…</div>
+    <div class="page-index">${index + 1} / ${SONGS.length}</div>
+  `;
+  return page;
+}
+
+function renderPage(page, data, note) {
+  const { song, artist } = splitTitle(data.title || "");
+  page.innerHTML = `
+    <img class="art" src="${data.thumbnail_url || ""}" alt="${song} album art" />
+    <div class="track-title">${song}</div>
+    <div class="track-artist">${artist}</div>
+    ${note ? `<div class="note">${note}</div>` : ""}
+    <div class="player-wrap">${data.html || ""}</div>
+  `;
+  // re-append page-index after innerHTML overwrite
+  const idx = document.createElement("div");
+  idx.className = "page-index";
+  idx.textContent = page.dataset.indexLabel;
+  page.appendChild(idx);
+}
+
+function renderError(page, indexLabel) {
+  page.innerHTML = `
+    <div class="error-text">Couldn't load this track.<br>Check the Spotify URL!</div>
+    <div class="page-index">${indexLabel}</div>
+  `;
+}
+
+async function init() {
+  SONGS.forEach((_, i) => {
+    const page = createPageSkeleton(i);
+    page.dataset.indexLabel = `${i + 1} / ${SONGS.length}`;
+    bookEl.appendChild(page);
+  });
+
+  SONGS.forEach(async (song, i) => {
+    const page = document.getElementById(`page-${i}`);
+    try {
+      const data = await fetchTrackData(song.url);
+      renderPage(page, data, song.note);
+    } catch (err) {
+      console.error(`Track ${i} failed:`, err);
+      renderError(page, `${i + 1} / ${SONGS.length}`);
+    }
+  });
+}
+
+init();
+</script>
+
+</body>
+</html>
